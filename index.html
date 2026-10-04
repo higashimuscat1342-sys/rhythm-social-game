@@ -75,6 +75,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .c.UL{box-shadow:0 0 18px #fff,0 0 34px #ff2bd6}
 .ulb{text-align:center;font-weight:900;font-size:20px;letter-spacing:.12em;margin-bottom:10px;background:linear-gradient(90deg,#ff2bd6,#f5ff3b,#39ff88,#00f0ff,#ff2bd6);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rb 1.5s linear infinite}
 @keyframes rb{to{background-position:200% 0}}
+.gi{display:block;width:100%;max-height:36vh;object-fit:contain}
 </style>
 </head>
 <body>
@@ -378,15 +379,18 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   const CLEAR_RATE = 2, FC_RATE = 5;   // ボーナス＝ヒット数×この倍率（クリア時／ノーミスのフルコンボ時に加算）。さらに難易度倍率が掛かる
   const MULT = {easy:1, normal:1.5, hard:2, veryhard:3};
   const RC = {N:"#7f93a8", R:"#00f0ff", SR:"#ff2bd6", SSR:"#f5ff3b", UL:"#ffffff"};
-  // 32体: レアリティ配分。名前を付けたい場合は CN に {番号:"名前"} を追加（画像は index.html と同じ場所の 001a.jpg〜032a.jpg）
+  // 全48体（001a〜033a.jpg ＋ n001〜n015.jpg）。名前を付けたい場合は CN に {内部番号+1:"名前"} を追加
   const CN = {};
   const CH = [];
-  [["N",12],["R",10],["SR",6],["SSR",4],["UL",1]].forEach(([r, n]) => { for (let k = 0; k < n; k++){ const i = CH.length; CH.push([CN[i + 1] || "No." + String(i + 1).padStart(3, "0"), r]); } });
+  // 内部番号(セーブ用)は既存33体の後ろにN 15枚を追加した順。表示順はSHOWでレアリティ順に並べ替える
+  [["N",12],["R",10],["SR",6],["SSR",4],["UL",1],["N",15]].forEach(([r, n]) => { for (let k = 0; k < n; k++){ const i = CH.length; CH.push([CN[i + 1] || (i < 33 ? "No." + String(i + 1).padStart(3, "0") : "N-" + String(i - 32).padStart(3, "0")), r]); } });
+  const RANKS = ["N", "R", "SR", "SSR", "UL"];
+  const SHOW = CH.map((c, k) => k).sort((a, b) => RANKS.indexOf(CH[a][1]) - RANKS.indexOf(CH[b][1]) || a - b);   // コレクションの表示順（N→R→SR→SSR→UL）
   let S = {pt:0, inv:{}, lv:{}, pity:0, best:0};
   try { Object.assign(S, JSON.parse(localStorage.getItem(SK) || "{}")); } catch(e){}
   function save(){ try { localStorage.setItem(SK, JSON.stringify(S)); } catch(e){} }
   const hm = $("home"), SUB0 = sub.innerHTML;
-  const imgOf = i => String(i + 1).padStart(3, "0") + "a.jpg";
+  const imgOf = i => i < 33 ? String(i + 1).padStart(3, "0") + "a.jpg" : "n" + String(i - 32).padStart(3, "0") + ".jpg";
   const card = (i, ex, d, n) => { const [nm, r] = CH[i];
     return '<div class="c ' + r + ' ' + (ex || "") + '" data-i="' + i + '" style="border-color:' + RC[r] + ';color:' + RC[r] + ';animation-delay:' + (d || 0) + 'ms"><div class="im"><span>' + (i + 1) + '</span><img src="' + imgOf(i) + '" onerror="this.remove()"></div><b>' + r + '</b>' + nm + (n ? '<i>' + n + '</i>' : '') + '</div>';
   };
@@ -570,12 +574,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       (res ? '<div class="msg">' + res + '</div>' : '') +
       (rsConfirm ? '<div class="warn" style="font-weight:700">⚠ 本当にリセットしますか？<br>PT・所持キャラ・強化・ベストスコアがすべて消えます。元に戻すことはできません。<br>必要なら先に引き継ぎコードを控えてください。</div><button class="b s" id="rsc">キャンセル（戻る）</button><button class="b s" id="rsy" style="border-color:#ff3b5c;color:#ff3b5c">はい、すべて消去する</button>'
         : '<button class="b s" id="rs" style="border-color:#ff3b5c;color:#ff3b5c">データをリセット</button>') + '<button class="b s" id="bk">← HOME</button>';
-    else if (v === "gacha") h = '<div id="t2" style="font-size:28px">GACHA</div>' + pt +
+    else if (v === "gacha") h = '<div id="t2" style="font-size:28px">GACHA</div>' + pt + '<img class="gi" src="gacha.jpg" onerror="this.remove()">' +
       '<div class="dim">1回 ' + COST + 'PT ・ 10連は最後にSR以上確定 ・ 50回でSSR天井（あと' + (49 - S.pity) + '回）<br>UL 0.1% / SSR 2.9% / SR 12% / R 30% / N 55%</div>' +
       '<div class="r2"><button class="b" id="p1"' + (S.pt < COST ? " disabled" : "") + '>1回</button><button class="b" id="p10"' + (S.pt < COST * 10 ? " disabled" : "") + '>10連</button></div>' +
       '<div class="g">' + (res ? res.map((x, k) => card(x[0], "", k * 120, x[1] ? "NEW" : "")).join("") : "") + '</div><button class="b s" id="bk">← HOME</button>';
     else h = '<div id="t2" style="font-size:28px">COLLECTION</div><div class="dim">' + own + ' / ' + CH.length + '</div><div class="g">' +
-      CH.map((c, i) => S.inv[i] ? card(i, "zoomable", 0, "Lv" + lvOf(i) + (spare(i) > 0 ? "↑" : "")) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><div class="im"><span style="opacity:1">？</span></div><b>?</b>???</div>').join("") +
+      SHOW.map(i => S.inv[i] ? card(i, "zoomable", 0, "Lv" + lvOf(i) + (spare(i) > 0 ? "↑" : "")) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><div class="im"><span style="opacity:1">？</span></div><b>?</b>???</div>').join("") +
       '</div><button class="b s" id="bk">← HOME</button>';
     hm.innerHTML = '<div class="w' + (v === "menu" ? " m" : "") + '">' + h + '</div>';
   }
@@ -603,6 +607,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     const ki = STATS.findIndex(a => a[1] === k), v = .8 + .4 * ((Math.abs(Math.sin((i + 1) * 12.9898 + ki * 78.233) * 43758.5453)) % 1);
     return Math.round(BASE[CH[i][1]][k] * v * (1 + .03 * lvOf(i)));
   }
+  const sfxLv = big => { if (!SFX) return; try {
+    [72, 76, 79, 84, 88].forEach((m, k) => note(m, k * .06, .5, "square", .07, 5000, .4));
+    note(96, .35, .8, "triangle", .14, 9000, .8);
+    if (big){ [91, 96, 100].forEach((m, k) => note(m, .4 + k * .07, .8, "triangle", .12, 9000, .8)); noise(0, .5, 2000, 9000, .15, true); }
+  } catch(e){} };
   const zm = $("zoom"); let zi = 0, dirty = false;
   function zoom(i){
     zi = i; const r = CH[i][1], lv = lvOf(i), sp = spare(i);
@@ -615,8 +624,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   }
   zm.addEventListener("click", e => {
     const id = e.target.id;
-    if (id === "enh" && spare(zi) >= 1 && lvOf(zi) < MAXLV){ S.lv[zi] = lvOf(zi) + 1; save(); dirty = true; zoom(zi); }
-    else if (id === "enh10"){ const n = Math.min(10, spare(zi), MAXLV - lvOf(zi)); if (n > 0){ S.lv[zi] = lvOf(zi) + n; save(); dirty = true; zoom(zi); } }
+    if (id === "enh" && spare(zi) >= 1 && lvOf(zi) < MAXLV){ S.lv[zi] = lvOf(zi) + 1; save(); dirty = true; sfxLv(false); zoom(zi); }
+    else if (id === "enh10"){ const n = Math.min(10, spare(zi), MAXLV - lvOf(zi)); if (n > 0){ S.lv[zi] = lvOf(zi) + n; save(); dirty = true; sfxLv(n > 1); zoom(zi); } }
     else if (id === "zx" || e.target === zm){ zm.hidden = true; if (dirty){ dirty = false; const t = hm.scrollTop; show("col"); hm.scrollTop = t; } }
   });
 
