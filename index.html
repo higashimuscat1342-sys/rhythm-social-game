@@ -140,11 +140,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   // BGM（ゲーム開始と同時に再生。効果音・振動はなし）
   const bgm = new Audio();
   bgm.preload = "auto"; bgm.volume = 0.85; bgm.loop = true;
-  let lastBgm = -1;
+  const BGM_HARD = ["music-h-01.mp3", "music-h-02.mp3", "music-h-03.mp3"];   // HARD / VERY HARD 専用（通常曲に加えて選ばれる）
+  let lastBgm = "";
   function pickBgm(){
-    let i;
-    do { i = Math.floor(Math.random() * BGM_FILES.length); } while (i === lastBgm && BGM_FILES.length > 1);
-    lastBgm = i; return BGM_FILES[i];
+    const pool = (level === "hard" || level === "veryhard") ? BGM_FILES.concat(BGM_HARD) : BGM_FILES;
+    let f;
+    do { f = pool[Math.floor(Math.random() * pool.length)]; } while (f === lastBgm && pool.length > 1);
+    lastBgm = f; return f;
   }
 
   const $ = id => document.getElementById(id);
