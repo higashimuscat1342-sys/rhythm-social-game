@@ -60,6 +60,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .scr.bg .b{background:rgba(4,6,14,.72)}.scr.bg .pt,.scr.bg .dim{text-shadow:0 0 6px #000,0 0 12px #000}.scr.bg .dim{color:#d8f6ff}
 #t2.logo{font-size:clamp(30px,8vw,64px);white-space:nowrap;margin:0 0 6px;text-shadow:0 0 18px var(--cyan),0 0 40px var(--cyan),4px 0 var(--mag)}
 .w.m{max-width:720px}.bt{max-width:460px}
+.zoomable{cursor:pointer}
+#zoom{position:absolute;inset:0;z-index:12;background:rgba(4,6,14,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.c.big.zm{width:min(88vw,calc(68vh*.75),480px);font-size:18px;animation:pop .35s both;box-shadow:0 0 30px currentColor}
 </style>
 </head>
 <body>
@@ -76,6 +79,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 </div></div>
 
 <div class="scr" id="home"></div>
+<div id="zoom" hidden></div>
 <div id="fx" hidden><canvas id="fc"></canvas><div id="fcard"></div><button class="b2" id="fskip">SKIP</button></div>
 
 <script>
@@ -370,7 +374,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   const hm = $("home"), SUB0 = sub.innerHTML;
   const imgOf = i => String(i + 1).padStart(3, "0") + "a.jpg";
   const card = (i, ex, d, n) => { const [nm, r] = CH[i];
-    return '<div class="c ' + r + ' ' + (ex || "") + '" style="border-color:' + RC[r] + ';color:' + RC[r] + ';animation-delay:' + (d || 0) + 'ms"><div class="im"><span>' + (i + 1) + '</span><img src="' + imgOf(i) + '" onerror="this.remove()"></div><b>' + r + '</b>' + nm + (n ? '<i>' + n + '</i>' : '') + '</div>';
+    return '<div class="c ' + r + ' ' + (ex || "") + '" data-i="' + i + '" style="border-color:' + RC[r] + ';color:' + RC[r] + ';animation-delay:' + (d || 0) + 'ms"><div class="im"><span>' + (i + 1) + '</span><img src="' + imgOf(i) + '" onerror="this.remove()"></div><b>' + r + '</b>' + nm + (n ? '<i>' + n + '</i>' : '') + '</div>';
   };
   function roll(guar){
     const r = Math.random() * 100;
@@ -397,15 +401,61 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   let FX = {mode:"", t0:0, rar:"N"}, P = [], AC;
   const ORD = ["N", "R", "SR", "SSR"];
   const fxCol = r => r === "SSR" ? "hsl(" + (performance.now() / 4 % 360) + ",100%,62%)" : RC[r];
-  function tone(f1, f2, d, ty, v, dl){
-    if (!SFX) return;
-    try { AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-      const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + (dl || 0);
-      o.type = ty; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + d);
-      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
-      o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d); } catch(e){}
+  // リッチ合成サウンド：デチューンsaw＋フィルタ＋リバーブ＋サブベース＋ノイズ
+  let MG, RV;
+  function ac(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      const cp = AC.createDynamicsCompressor(); MG = AC.createGain(); MG.gain.value = .8; MG.connect(cp); cp.connect(AC.destination);
+      RV = AC.createConvolver(); const n = AC.sampleRate * 2, b = AC.createBuffer(2, n, AC.sampleRate);
+      for (let c = 0; c < 2; c++){ const d = b.getChannelData(c); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 2.5); }
+      RV.buffer = b; const rg = AC.createGain(); rg.gain.value = .5; RV.connect(rg); rg.connect(MG);
+    }
+    if (AC.state === "suspended") AC.resume();
+    return AC;
   }
-  const sfxRev = r => ({N:[660], R:[660,880], SR:[660,880,1100], SSR:[523,659,784,1047,1319]})[r].forEach((f, k) => tone(f, f, .3, "triangle", .12, k * .09));
+  const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+  function note(m, dl, d, ty, v, lp, wet){
+    const a = ac(), t = a.currentTime + dl, g = a.createGain(), f = a.createBiquadFilter(), s2 = a.createGain();
+    f.type = "lowpass"; f.frequency.value = lp || 4000;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .01); g.gain.exponentialRampToValueAtTime(.0008, t + d);
+    [-7, 7].forEach(dt => { const o = a.createOscillator(); o.type = ty; o.frequency.value = mf(m); o.detune.value = dt; o.connect(f); o.start(t); o.stop(t + d + .05); });
+    f.connect(g); g.connect(MG); s2.gain.value = wet == null ? .6 : wet; g.connect(s2); s2.connect(RV);
+  }
+  function noise(dl, d, f1, f2, v, rise){
+    const a = ac(), t = a.currentTime + dl, n = a.sampleRate * d, b = a.createBuffer(1, n, a.sampleRate), x = b.getChannelData(0);
+    for (let k = 0; k < n; k++) x[k] = Math.random() * 2 - 1;
+    const sr = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), w = a.createGain();
+    sr.buffer = b; f.type = "bandpass"; f.Q.value = 1.2; f.frequency.setValueAtTime(f1, t); f.frequency.exponentialRampToValueAtTime(f2, t + d);
+    if (rise){ g.gain.setValueAtTime(.0005, t); g.gain.exponentialRampToValueAtTime(v, t + d * .95); g.gain.linearRampToValueAtTime(0, t + d); }
+    else { g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); }
+    sr.connect(f); f.connect(g); g.connect(MG); w.gain.value = .5; g.connect(w); w.connect(RV); sr.start(t);
+  }
+  function boom(dl, v){
+    const a = ac(), t = a.currentTime + dl, o = a.createOscillator(), g = a.createGain();
+    o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(28, t + .9);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + .9); o.connect(g); g.connect(MG); o.start(t); o.stop(t + 1);
+  }
+  function sweep(d, f1, f2, v){
+    const a = ac(), t = a.currentTime, o = a.createOscillator(), g = a.createGain(), f = a.createBiquadFilter();
+    o.type = "sawtooth"; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    f.type = "lowpass"; f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(5000, t + d);
+    g.gain.setValueAtTime(.001, t); g.gain.exponentialRampToValueAtTime(v, t + d); g.gain.linearRampToValueAtTime(0, t + d + .05);
+    o.connect(f); f.connect(g); g.connect(MG); o.start(t); o.stop(t + d + .1);
+  }
+  const sfxCharge = () => { if (SFX) try { noise(0, 1.5, 300, 7000, .5, true); sweep(1.5, 70, 900, .12); } catch(e){} };
+  const sfxHit = () => { if (SFX) try { boom(0, .9); noise(0, 1.3, 8000, 400, .6); } catch(e){} };
+  const sfxRev = r => { if (!SFX) return; try {
+    if (r === "N"){ note(76, 0, .4, "triangle", .2, 3000); note(83, .09, .6, "triangle", .16, 3000); }
+    else if (r === "R"){ [72, 76, 79, 84].forEach((m, k) => note(m, k * .07, .7, "triangle", .16, 3500)); note(96, .3, .5, "sine", .1); }
+    else if (r === "SR"){ boom(0, .5); noise(0, .8, 9000, 3000, .15);
+      [60, 64, 67, 71].forEach(m => note(m, 0, 1.4, "sawtooth", .06, 2500));
+      [72, 76, 79, 83, 88, 91].forEach((m, k) => note(m, k * .06, .9, "triangle", .15, 5000)); }
+    else { boom(0, 1); noise(0, 2, 10000, 500, .5);
+      [48, 55, 60, 64, 67, 72].forEach(m => note(m, 0, 2.4, "sawtooth", .07, 3500));
+      [72, 76, 79, 84, 88, 91, 96, 100].forEach((m, k) => note(m, k * .07, 1.2, "triangle", .15, 6000));
+      [84, 88, 91, 96].forEach(m => note(m, .7, 2, "sine", .12, 8000, .9)); }
+  } catch(e){} };
   function burst(r){
     const n = {N:25, R:60, SR:130, SSR:300}[r], cx = fc.width / 2, cy = fc.height / 2;
     for (let k = 0; k < n; k++){ const a = Math.random() * 6.283, sp = 2 + Math.random() * (r === "SSR" ? 12 : 7);
@@ -427,7 +477,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       x.fillStyle = gr; x.fillRect(0, 0, W, H);
       for (let j = 0; j < 3; j++){ const a = Math.random() * 6.283, R = Math.max(W, H) * .5; P.push({x:cx + Math.cos(a) * R, y:cy + Math.sin(a) * R, in:1, life:1, c, z:2}); }
       fx.style.transform = "translate(" + ((Math.random() - .5) * k * 10) + "px," + ((Math.random() - .5) * k * 10) + "px)";
-      if (k >= 1){ FX.mode = "flash"; FX.t0 = now; fx.style.transform = ""; tone(180, 30, .6, "square", .15); }
+      if (k >= 1){ FX.mode = "flash"; FX.t0 = now; fx.style.transform = ""; sfxHit(); }
     } else if (FX.mode === "flash"){
       rays(1, t * 2); x.globalAlpha = Math.max(0, 1 - t * 2.5); x.fillStyle = "#fff"; x.fillRect(0, 0, W, H); x.globalAlpha = 1;
       if (t > .45){ FX.mode = "wait"; FX.next && FX.next(); }
@@ -449,7 +499,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     const top = res.map(r => CH[r[0]][1]).reduce((a, b) => ORD.indexOf(b) > ORD.indexOf(a) ? b : a, "N");
     fc.width = innerWidth; fc.height = innerHeight; P.length = 0; fcard.innerHTML = ""; fskip.hidden = res.length < 2;
     fx.hidden = false;
-    await new Promise(r => { FX = {mode:"charge", t0:performance.now(), rar:top, next:r}; tone(100, 1400, 1.5, "sawtooth", .05); requestAnimationFrame(fxLoop); });
+    await new Promise(r => { FX = {mode:"charge", t0:performance.now(), rar:top, next:r}; sfxCharge(); requestAnimationFrame(fxLoop); });
     for (const [i, nw] of res){
       if (FX.skip) break;
       const r = CH[i][1];
@@ -470,7 +520,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       '<div class="r2"><button class="b" id="p1"' + (S.pt < COST ? " disabled" : "") + '>1回</button><button class="b" id="p10"' + (S.pt < COST * 10 ? " disabled" : "") + '>10連</button></div>' +
       '<div class="g">' + (res ? res.map((x, k) => card(x[0], "", k * 120, x[1] ? "NEW" : "")).join("") : "") + '</div><button class="b s" id="bk">← HOME</button>';
     else h = '<div id="t2" style="font-size:28px">COLLECTION</div><div class="dim">' + own + ' / ' + CH.length + '</div><div class="g">' +
-      CH.map((c, i) => S.inv[i] ? card(i, "", 0, "×" + S.inv[i]) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><div class="im"><span style="opacity:1">？</span></div><b>?</b>???</div>').join("") +
+      CH.map((c, i) => S.inv[i] ? card(i, "zoomable", 0, "×" + S.inv[i]) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><div class="im"><span style="opacity:1">？</span></div><b>?</b>???</div>').join("") +
       '</div><button class="b s" id="bk">← HOME</button>';
     hm.innerHTML = '<div class="w' + (v === "menu" ? " m" : "") + '">' + h + '</div>';
   }
@@ -478,10 +528,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     hm.hidden = true; state = "idle";
     title.textContent = "OVERCLOCKED"; sub.innerHTML = SUB0; startBtn.textContent = "START"; lvBox.hidden = false; ov.hidden = false;
   }
-  hm.addEventListener("click", e => { const id = e.target.id;
+  hm.addEventListener("click", e => { const z = e.target.closest(".zoomable"); if (z){ zoom(+z.dataset.i); return; } const id = e.target.id;
     if (id === "bp") openPlay(); else if (id === "bg") show("gacha"); else if (id === "bc") show("col");
     else if (id === "bk") show("menu"); else if (id === "p1") pull(1); else if (id === "p10") pull(10); });
   $("toHome").addEventListener("click", () => { ov.hidden = true; show("menu"); });
+  const zm = $("zoom");
+  function zoom(i){ zm.innerHTML = card(i, "big zm", 0, "×" + S.inv[i]) + '<div class="dim" style="color:#9bc4d4">タップで閉じる</div>'; zm.hidden = false; }
+  zm.addEventListener("click", () => { zm.hidden = true; });
   show("menu");
   frame();
 })();
