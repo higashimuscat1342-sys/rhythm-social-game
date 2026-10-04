@@ -174,9 +174,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     try { bgm.pause(); } catch(e){}
     title.textContent = cleared ? "CLEAR" : "GAME OVER";
     sub.innerHTML = "HIT " + score + " / " + GOAL + "<br>PERFECT " + cnt.p + " ・ GOOD " + cnt.g + " ・ MISS " + cnt.m + "<br>MAX COMBO " + maxCombo;
-    const rw = Math.round((score + (cleared ? 50 : 0)) * MULT[level]);
+    const fc = cleared && cnt.m === 0, cb = cleared ? score * CLEAR_RATE : 0, fb = fc ? score * FC_RATE : 0;
+    const rw = Math.round((score + cb + fb) * MULT[level]);
     S.pt += rw; S.best = Math.max(S.best, score); save();
-    sub.innerHTML += '<br><b style="color:#f5ff3b;font-size:20px">+' + rw + ' PT</b>（所持 ' + S.pt + '）';
+    sub.innerHTML += '<br>' + (fc ? '<b style="color:#f5ff3b">★ FULL COMBO ★</b><br>' : '') +
+      'HIT ' + score + (cb ? ' ＋ CLEAR ' + cb : '') + (fb ? ' ＋ FULL COMBO ' + fb : '') + ' ×' + MULT[level] +
+      '<br><b style="color:#f5ff3b;font-size:20px">+' + rw + ' PT</b>（所持 ' + S.pt + '）';
     startBtn.textContent = "RETRY";
     lvBox.hidden = false;
     ov.hidden = false;
@@ -360,6 +363,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 
   // ===== メイン／ガチャ =====
   const SK = "overclocked_save_v1", COST = 100;
+  const CLEAR_RATE = 2, FC_RATE = 5;   // ボーナス＝ヒット数×この倍率（クリア時／ノーミスのフルコンボ時に加算）。さらに難易度倍率が掛かる
   const MULT = {easy:1, normal:1.5, hard:2, veryhard:3};
   const RC = {N:"#7f93a8", R:"#00f0ff", SR:"#ff2bd6", SSR:"#f5ff3b"};
   // 32体: レアリティ配分。名前を付けたい場合は CN に {番号:"名前"} を追加（画像は index.html と同じ場所の 001a.jpg〜032a.jpg）
