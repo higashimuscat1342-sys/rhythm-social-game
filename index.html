@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>OVERCLOCKED</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04060e">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="OVERCLOCKED">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -30,7 +37,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   background:linear-gradient(90deg,rgba(255,43,214,.25),rgba(0,240,255,.25));box-shadow:0 0 18px rgba(255,43,214,.5)}
 #start:active{background:var(--mag)}
 
-.scr{position:absolute;inset:0;z-index:3;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 18px) 16px calc(env(safe-area-inset-bottom,0px) + 24px);background:rgba(4,6,14,.9)}
+.scr{position:absolute;inset:0;z-index:3;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 18px) 16px calc(env(safe-area-inset-bottom,0px) + 24px);background:#000}
 .w{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
 #t2{font-size:clamp(28px,9vw,44px);font-weight:900;letter-spacing:.06em;color:#fff;text-shadow:0 0 12px var(--cyan),3px 0 var(--mag);margin-top:8px}
 .pt{font-size:30px;font-weight:900;color:#f5ff3b;text-shadow:0 0 12px #f5ff3b}
@@ -401,7 +408,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   const SK = "overclocked_save_v1", COST = 100;
   const PT_P = 1.5, PT_G = 1.2;   // 1ノーツあたりの基礎点（PERFECT／GOOD）
   const CLEAR_RATE = 2.5, FC_RATE = 6;   // ボーナス＝基礎点合計×この倍率（クリア時／ノーミスのフルコンボ時に加算）。さらに難易度倍率が掛かる
-  const MULT = {easy:1, normal:1.5, hard:2, veryhard:3};
+  const MULT = {easy:1, normal:1.5, hard:2.5, veryhard:4};
   const RC = {N:"#7f93a8", R:"#00f0ff", SR:"#ff2bd6", SSR:"#f5ff3b", UL:"#ffffff"};
   // 全48体（001a〜033a.jpg ＋ n001〜n015.jpg）。名前を付けたい場合は CN に {内部番号+1:"名前"} を追加
   const CN = {};
@@ -593,7 +600,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     const own = Object.keys(S.inv).length, pt = '<div class="pt">' + S.pt + ' PT</div>';
     let h = "";
     if (v === "menu") h = '<div class="tp"><div id="t2" class="logo">OVERCLOCKED</div>' + pt + '<div class="dim">BEST HIT ' + S.best + ' ・ COLLECTION ' + own + '/' + CH.length + '</div></div>' +
-      '<div class="bt"><button class="b" id="bp">♪ PLAY</button><button class="b" id="bg">GACHA（' + Math.floor(S.pt / COST) + '回分）</button><button class="b" id="bc">COLLECTION</button><button class="b s" id="bd">DATA（引き継ぎ・リセット）</button></div>';
+      '<div class="bt"><button class="b" id="bp">♪ PLAY</button><button class="b" id="bg">GACHA（' + Math.floor(S.pt / COST) + '回分）</button><button class="b" id="bc">COLLECTION</button><button class="b s" id="bd">DATA（引き継ぎ・リセット）</button><div class="r2" style="width:100%">' + (isStandalone() ? '' : '<button class="b s" id="ba">ホームに追加</button>') + '<button class="b s" id="bsh">共有</button></div></div>';
     else if (v === "data") h = '<div id="t2" style="font-size:28px">DATA</div>' +
       '<div class="warn">⚠ セーブデータはこのブラウザ内にのみ保存されます。ブラウザのデータ／キャッシュ削除、端末や別ブラウザへの移動、シークレットモードでは消えます。大切なデータは引き継ぎコードを控えておいてください。リセットは元に戻せません。</div>' +
       '<div class="dim">引き継ぎコード（書き出し）</div><textarea class="ta" id="ex" readonly>' + exportCode() + '</textarea><button class="b s" id="cp">コードをコピー</button>' +
@@ -616,7 +623,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   }
   hm.addEventListener("click", e => { const z = e.target.closest(".zoomable"); if (z){ zoom(+z.dataset.i); return; } const id = e.target.id;
     if (id === "bp") openPlay(); else if (id === "bg") show("gacha"); else if (id === "bc") show("col");
-    else if (id === "bk") show("menu"); else if (id === "bd") show("data");
+    else if (id === "bk") show("menu"); else if (id === "bd") show("data"); else if (id === "ba") addHome(); else if (id === "bsh") shareApp();
     else if (id === "cp"){ const t = $("ex"); let ok = false; t.select(); try { ok = document.execCommand("copy"); } catch(e){}
       if (!ok) try { navigator.clipboard.writeText(t.value); ok = true; } catch(e){}
       show("data", ok ? "コピーしました" : "コピーできません。コードを長押しで選択してコピーしてください"); }
@@ -676,6 +683,28 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       for (let i = 0; i < CH.length; i++){ const n = Math.max(0, Math.min(999, (d.inv && d.inv[i]) | 0)); if (n){ inv[i] = n; lv[i] = Math.max(0, Math.min(maxE(i), n - 1, (d.lv && d.lv[i]) | 0)); } }
       S = {pt:Math.max(0, d.pt | 0), inv, lv, pity:Math.max(0, d.pity | 0), best:Math.max(0, d.best | 0)}; save(); return "OK";
     } catch(e){ return "コードが正しくありません"; }
+  }
+  // ===== ホームに追加／共有 =====
+  let DP = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); DP = e; });
+  window.addEventListener("appinstalled", () => { DP = null; if (!hm.hidden && hm.classList.contains("bg")) show("menu"); });
+  function isStandalone(){ return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true; }
+  function msgBox(html){
+    zm.innerHTML = '<div class="zw"><div class="warn" style="text-align:left;color:#d8f6ff;border-color:#00f0ff">' + html + '</div><button class="b s" id="zx">閉じる</button></div>';
+    zm.hidden = false;
+  }
+  async function addHome(){
+    if (DP){ const p = DP; DP = null; try { p.prompt(); await p.userChoice; } catch(e){} return; }
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    msgBox((ios ? "Safariの共有ボタン（□に↑のマーク）を押して、「ホーム画面に追加」を選んでください。<br>※Chromeなど他のブラウザの場合は、Safariでこのページを開いてください。"
+                : "ブラウザのメニュー（︙）から「ホーム画面に追加」または「アプリをインストール」を選んでください。") +
+      (location.protocol === "file:" ? "<br><br>※ファイルを直接開いている状態では追加できません。公開したURL（https）で開いてください。" : ""));
+  }
+  async function shareApp(){
+    const url = location.href.split("#")[0], text = "音ゲー×ガチャ「OVERCLOCKED」で遊ぼう！" + (S.best ? "ベストHIT " + S.best + "！" : "");
+    try { if (navigator.share){ await navigator.share({title:"OVERCLOCKED", text, url}); return; } } catch(e){ if (e && e.name === "AbortError") return; }
+    let ok = false; try { await navigator.clipboard.writeText(text + " " + url); ok = true; } catch(e){}
+    msgBox(ok ? "共有メッセージとリンクをコピーしました。<br>SNSやメッセージアプリに貼り付けてください。" : "この環境では共有できません。次のURLをコピーして送ってください。<br><br>" + url);
   }
   show("menu");
   frame();
