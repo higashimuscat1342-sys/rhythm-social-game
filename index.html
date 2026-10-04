@@ -67,7 +67,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #zoom{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 24px}
 .c.big.zm{width:min(62vw,calc(38vh*.75),300px)}
 .st{display:flex;align-items:center;gap:8px;width:100%;font-size:13px;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif}
-.st span{width:54px;text-align:left}.st b{width:46px;text-align:right}
+.st span{width:54px;text-align:left}.st b{width:62px;text-align:right}
 .bar{flex:1;height:8px;background:rgba(0,240,255,.15)}.bar i{display:block;height:100%}
 .ta{width:100%;height:84px;background:#0a1428;color:#d8f6ff;border:1px solid #2a5566;font-size:12px;padding:8px;user-select:text;-webkit-user-select:text;resize:none}
 .warn{font-size:12px;line-height:1.7;color:#ffb3c0;border:1px solid #ff3b5c;padding:10px;text-align:left;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif}
@@ -76,6 +76,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .ulb{text-align:center;font-weight:900;font-size:20px;letter-spacing:.12em;margin-bottom:10px;background:linear-gradient(90deg,#ff2bd6,#f5ff3b,#39ff88,#00f0ff,#ff2bd6);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rb 1.5s linear infinite}
 @keyframes rb{to{background-position:200% 0}}
 .gi{display:block;width:100%;max-height:36vh;object-fit:contain}
+#title.tfc{background:linear-gradient(90deg,#ff2bd6,#f5ff3b,#39ff88,#00f0ff,#ff2bd6);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;animation:rb 1.2s linear infinite,pop .6s cubic-bezier(.2,1.6,.4,1) both;font-size:clamp(24px,7.5vw,38px)}
+#title.tcl{color:#f5ff3b;text-shadow:0 0 18px #f5ff3b;animation:pop .5s cubic-bezier(.2,1.6,.4,1) both}
 </style>
 </head>
 <body>
@@ -113,7 +115,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     veryhard: {name:"VERY HARD", keys:5, bpm:220, fall:600,  goal:450, irr:[0.5, 0.5, 0.75, 1, 0.5, 1.5, 0.6, 2, 0.5], chord:0.15},
   };
   // index.html と同じフォルダに置く。ゲーム開始のたびにランダムで1曲選ばれる
-  const BGM_FILES = ["Music1.mp3", "Music2.mp3", "Music3.mp3", "Music4.mp3", "Music5.mp3", "Music6.mp3", "Music7.mp3", "Music8.mp3", "Music9.mp3"];
+  const BGM_FILES = Array.from({length: 15}, (_, k) => "Music" + (k + 1) + ".mp3");
   const PERFECT = 70, GOOD = 150, NEAR = 340;
   const FONT = '"Orbitron","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif';
   const KEYS_PC = "zxcvb";
@@ -177,7 +179,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     cnt = {p:0, g:0, m:0}; lastLane = -1; sameRun = 0; GOAL = BASE_GOAL; nextT = T0;
     judge = {text:"", color:"#fff", at:0};
     try { bgm.pause(); bgm.src = pickBgm(); bgm.currentTime = 0; bgm.play().catch(() => {}); } catch(e){}   // タップ操作内で再生
-    ov.hidden = true;
+    ov.hidden = true; ov.style.background = ""; title.className = ""; fw.length = 0;
     startT = performance.now();
     state = "play";
   }
@@ -185,17 +187,38 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   function finish(cleared){
     state = "over";
     try { bgm.pause(); } catch(e){}
-    title.textContent = cleared ? "CLEAR" : "GAME OVER";
+    const fcb = cleared && cnt.m === 0;
+    title.textContent = fcb ? "FULL COMBO!" : cleared ? "CLEAR" : "GAME OVER";
+    title.className = fcb ? "tfc" : cleared ? "tcl" : "";
     sub.innerHTML = "HIT " + score + " / " + GOAL + "<br>PERFECT " + cnt.p + " ・ GOOD " + cnt.g + " ・ MISS " + cnt.m + "<br>MAX COMBO " + maxCombo;
-    const fc = cleared && cnt.m === 0, cb = cleared ? score * CLEAR_RATE : 0, fb = fc ? score * FC_RATE : 0;
-    const rw = Math.round((score + cb + fb) * MULT[level]);
+    const base = cnt.p * PT_P + cnt.g * PT_G, cb = cleared ? base * CLEAR_RATE : 0, fb = fcb ? base * FC_RATE : 0;
+    const rw = Math.round((base + cb + fb) * MULT[level]);
     S.pt += rw; S.best = Math.max(S.best, score); save();
-    sub.innerHTML += '<br>' + (fc ? '<b style="color:#f5ff3b">★ FULL COMBO ★</b><br>' : '') +
-      'HIT ' + score + (cb ? ' ＋ CLEAR ' + cb : '') + (fb ? ' ＋ FULL COMBO ' + fb : '') + ' ×' + MULT[level] +
+    sub.innerHTML += '<br>' + (fcb ? '<b style="color:#f5ff3b">★ FULL COMBO ★</b><br>' : '') +
+      'BASE ' + Math.round(base) + (cb ? ' ＋ CLEAR ' + Math.round(cb) : '') + (fb ? ' ＋ FULL COMBO ' + Math.round(fb) : '') + ' ×' + MULT[level] +
       '<br><b style="color:#f5ff3b;font-size:20px">+' + rw + ' PT</b>（所持 ' + S.pt + '）';
     startBtn.textContent = "RETRY";
     lvBox.hidden = false;
     ov.hidden = false;
+    if (cleared){ ov.style.background = "rgba(4,6,14,.5)"; celebrate(fcb); fcb ? sfxFC() : sfxClear(); }
+  }
+
+  // クリア演出：紙吹雪（フルコンボは増量＋花火）
+  const fw = [];
+  function celebrate(big){
+    const cols = ["#00f0ff", "#ff2bd6", "#f5ff3b", "#39ff88", "#9d6bff"];
+    for (let k = 0; k < (big ? 150 : 70); k++) fw.push({x:Math.random() * L.W, y:-10 - Math.random() * L.H * .3, vx:(Math.random() - .5) * 2, vy:2 + Math.random() * 3, g:.02, r:Math.random() * 6, vr:(Math.random() - .5) * .3, c:cols[k % 5], s:5 + Math.random() * 5, life:1, d:.003});
+    if (big) for (let n = 0; n < 6; n++) setTimeout(() => { if (state !== "over") return;
+      const px = L.W * (.15 + Math.random() * .7), py = L.H * (.15 + Math.random() * .35);
+      for (let k = 0; k < 60; k++){ const a = Math.random() * 6.283, sp = 2 + Math.random() * 6; fw.push({x:px, y:py, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, g:.08, r:0, vr:0, c:cols[k % 5], s:4, life:1, d:.016}); } }, 200 + n * 250);
+  }
+  function drawFw(){
+    for (let i = fw.length - 1; i >= 0; i--){
+      const p = fw[i]; p.x += p.vx; p.y += p.vy; p.vy += p.g; p.r += p.vr; p.life -= p.d;
+      if (p.life <= 0 || p.y > L.H + 20){ fw.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.c; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore();
+    }
+    ctx.globalAlpha = 1;
   }
 
   function hurt(text, isNote){
@@ -357,7 +380,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     requestAnimationFrame(frame);
     const pn = performance.now(), g = pn - startT;
     if (state === "play") update(g);
-    draw(g, pn);
+    draw(g, pn); drawFw();
   }
 
   cv.addEventListener("pointerdown", e => {
@@ -376,7 +399,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 
   // ===== メイン／ガチャ =====
   const SK = "overclocked_save_v1", COST = 100;
-  const CLEAR_RATE = 2, FC_RATE = 5;   // ボーナス＝ヒット数×この倍率（クリア時／ノーミスのフルコンボ時に加算）。さらに難易度倍率が掛かる
+  const PT_P = 1.5, PT_G = 1.2;   // 1ノーツあたりの基礎点（PERFECT／GOOD）
+  const CLEAR_RATE = 2.5, FC_RATE = 6;   // ボーナス＝基礎点合計×この倍率（クリア時／ノーミスのフルコンボ時に加算）。さらに難易度倍率が掛かる
   const MULT = {easy:1, normal:1.5, hard:2, veryhard:3};
   const RC = {N:"#7f93a8", R:"#00f0ff", SR:"#ff2bd6", SSR:"#f5ff3b", UL:"#ffffff"};
   // 全48体（001a〜033a.jpg ＋ n001〜n015.jpg）。名前を付けたい場合は CN に {内部番号+1:"名前"} を追加
@@ -386,8 +410,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   [["N",12],["R",10],["SR",6],["SSR",4],["UL",1],["N",15]].forEach(([r, n]) => { for (let k = 0; k < n; k++){ const i = CH.length; CH.push([CN[i + 1] || (i < 33 ? "No." + String(i + 1).padStart(3, "0") : "N-" + String(i - 32).padStart(3, "0")), r]); } });
   const RANKS = ["N", "R", "SR", "SSR", "UL"];
   const SHOW = CH.map((c, k) => k).sort((a, b) => RANKS.indexOf(CH[a][1]) - RANKS.indexOf(CH[b][1]) || a - b);   // コレクションの表示順（N→R→SR→SSR→UL）
+  const MAXE = {N:99, R:70, SR:50, SSR:30, UL:10};   // レアリティ別の最大強化回数（初期Lv1 → 最大Lv＝回数＋1）
+  const maxE = i => MAXE[CH[i][1]];
   let S = {pt:0, inv:{}, lv:{}, pity:0, best:0};
   try { Object.assign(S, JSON.parse(localStorage.getItem(SK) || "{}")); } catch(e){}
+  for (const k in S.lv) S.lv[k] = Math.min(S.lv[k] | 0, CH[k] ? maxE(k) : 0);
   function save(){ try { localStorage.setItem(SK, JSON.stringify(S)); } catch(e){} }
   const hm = $("home"), SUB0 = sub.innerHTML;
   const imgOf = i => i < 33 ? String(i + 1).padStart(3, "0") + "a.jpg" : "n" + String(i - 32).padStart(3, "0") + ".jpg";
@@ -579,13 +606,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       '<div class="r2"><button class="b" id="p1"' + (S.pt < COST ? " disabled" : "") + '>1回</button><button class="b" id="p10"' + (S.pt < COST * 10 ? " disabled" : "") + '>10連</button></div>' +
       '<div class="g">' + (res ? res.map((x, k) => card(x[0], "", k * 120, x[1] ? "NEW" : "")).join("") : "") + '</div><button class="b s" id="bk">← HOME</button>';
     else h = '<div id="t2" style="font-size:28px">COLLECTION</div><div class="dim">' + own + ' / ' + CH.length + '</div><div class="g">' +
-      SHOW.map(i => S.inv[i] ? card(i, "zoomable", 0, "Lv" + lvOf(i) + (spare(i) > 0 ? "↑" : "")) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><div class="im"><span style="opacity:1">？</span></div><b>?</b>???</div>').join("") +
+      SHOW.map(i => S.inv[i] ? card(i, "zoomable", 0, "Lv" + (lvOf(i) + 1) + (spare(i) > 0 ? "↑" : "")) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><div class="im"><span style="opacity:1">？</span></div><b>?</b>???</div>').join("") +
       '</div><button class="b s" id="bk">← HOME</button>';
     hm.innerHTML = '<div class="w' + (v === "menu" ? " m" : "") + '">' + h + '</div>';
   }
   function openPlay(){
     hm.hidden = true; state = "idle";
-    title.textContent = "OVERCLOCKED"; sub.innerHTML = SUB0; startBtn.textContent = "START"; lvBox.hidden = false; ov.hidden = false;
+    title.textContent = "OVERCLOCKED"; title.className = ""; ov.style.background = ""; sub.innerHTML = SUB0; startBtn.textContent = "START"; lvBox.hidden = false; ov.hidden = false;
   }
   hm.addEventListener("click", e => { const z = e.target.closest(".zoomable"); if (z){ zoom(+z.dataset.i); return; } const id = e.target.id;
     if (id === "bp") openPlay(); else if (id === "bg") show("gacha"); else if (id === "bc") show("col");
@@ -599,14 +626,24 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     else if (id === "rsy"){ rsConfirm = false; S = {pt:0, inv:{}, lv:{}, pity:0, best:0}; save(); show("menu"); } else if (id === "p1") pull(1); else if (id === "p10") pull(10); });
   $("toHome").addEventListener("click", () => { ov.hidden = true; show("menu"); });
   // ===== 強化・ステータス =====
-  const MAXLV = 100;
   const STATS = [["体力","hp"], ["攻撃力","atk"], ["防御力","def"], ["精神力","mnd"]];
-  const BASE = {N:{hp:100, atk:10, def:10, mnd:10}, R:{hp:160, atk:18, def:18, mnd:18}, SR:{hp:320, atk:40, def:40, mnd:40}, SSR:{hp:600, atk:75, def:75, mnd:75}, UL:{hp:1200, atk:150, def:150, mnd:150}};  // レアリティ別の初期値
-  const lvOf = i => S.lv[i] || 0, spare = i => (S.inv[i] || 0) - 1 - lvOf(i);   // 余剰コピー＝所持数−1−強化済み回数
-  function stat(i, k){   // 初期値×キャラ個体差(0.8〜1.2)×(1＋0.03×Lv)
+  // 初期値（体力は他の10倍）と、強化1回あたりの伸び率（初期値×この割合が加算）。高レアほど初期値も伸びも大きく、強化回数は少ない
+  const BASE = {N:{hp:100, atk:10, def:10, mnd:10}, R:{hp:200, atk:20, def:20, mnd:20}, SR:{hp:400, atk:40, def:40, mnd:40}, SSR:{hp:800, atk:80, def:80, mnd:80}, UL:{hp:2000, atk:200, def:200, mnd:200}};
+  const GROW = {N:.03, R:.05, SR:.08, SSR:.15, UL:.6};
+  const lvOf = i => S.lv[i] || 0, spare = i => (S.inv[i] || 0) - 1 - lvOf(i);   // 余剰＝所持数−1−強化済み回数
+  function stat(i, k){   // 初期値×キャラ個体差(0.8〜1.2)×(1＋伸び率×強化回数)
     const ki = STATS.findIndex(a => a[1] === k), v = .8 + .4 * ((Math.abs(Math.sin((i + 1) * 12.9898 + ki * 78.233) * 43758.5453)) % 1);
-    return Math.round(BASE[CH[i][1]][k] * v * (1 + .03 * lvOf(i)));
+    return Math.round(BASE[CH[i][1]][k] * v * (1 + GROW[CH[i][1]] * lvOf(i)));
   }
+  const sfxClear = () => { if (!SFX) return; try {
+    [72, 76, 79, 84].forEach((m, k) => note(m, k * .09, .6, "triangle", .17, 4500)); note(91, .4, 1, "sine", .12, 8000, .8); boom(0, .3);
+  } catch(e){} };
+  const sfxFC = () => { if (!SFX) return; try {
+    boom(0, .8); noise(0, 1.4, 9000, 1500, .35);
+    [48, 55, 60, 64, 67].forEach(m => note(m, 0, 2, "sawtooth", .06, 3500));
+    [72, 76, 79, 84, 88, 91, 96, 100].forEach((m, k) => note(m, .15 + k * .07, 1, "triangle", .15, 6500));
+    [84, 88, 91, 96].forEach(m => note(m, .8, 1.8, "sine", .12, 8000, .9));
+  } catch(e){} };
   const sfxLv = big => { if (!SFX) return; try {
     [72, 76, 79, 84, 88].forEach((m, k) => note(m, k * .06, .5, "square", .07, 5000, .4));
     note(96, .35, .8, "triangle", .14, 9000, .8);
@@ -614,18 +651,18 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   } catch(e){} };
   const zm = $("zoom"); let zi = 0, dirty = false;
   function zoom(i){
-    zi = i; const r = CH[i][1], lv = lvOf(i), sp = spare(i);
+    zi = i; const r = CH[i][1], lv = lvOf(i), sp = spare(i), mx = maxE(i);
     zm.innerHTML = '<div class="zw">' + card(i, "big zm", 0, "") +
-      '<div class="dim" style="color:#d8f6ff;font-size:14px">Lv ' + lv + ' / ' + MAXLV + ' ・ 余剰コピー ' + Math.max(0, sp) + '</div>' +
-      STATS.map(([nm, k]) => '<div class="st"><span>' + nm + '</span><div class="bar"><i style="width:' + Math.min(100, stat(i, k) / (BASE.UL[k] * 4.8) * 100) + '%;background:' + RC[r] + '"></i></div><b>' + stat(i, k) + '</b></div>').join("") +
-      '<button class="b" id="enh"' + (sp < 1 || lv >= MAXLV ? " disabled" : "") + '>' + (lv >= MAXLV ? "MAX" : "強化（コピー1消費 → Lv" + (lv + 1) + "）") + '</button>' +
-      '<button class="b s" id="enh10"' + (sp < 1 || lv >= MAXLV ? " disabled" : "") + '>まとめて強化（最大10レベル）</button><button class="b s" id="zx">閉じる</button></div>';
+      '<div class="dim" style="color:#d8f6ff;font-size:14px">Lv ' + (lv + 1) + ' / ' + (mx + 1) + ' ・ 余剰 ' + Math.max(0, sp) + ' ・ 強化余地 ' + (mx - lv) + '</div>' +
+      STATS.map(([nm, k]) => '<div class="st"><span>' + nm + '</span><div class="bar"><i style="width:' + Math.min(100, stat(i, k) / (BASE[r][k] * 1.2 * (1 + GROW[r] * mx)) * 100) + '%;background:' + RC[r] + '"></i></div><b>' + stat(i, k) + '</b></div>').join("") +
+      '<button class="b" id="enh"' + (sp < 1 || lv >= mx ? " disabled" : "") + '>' + (lv >= mx ? "MAX" : "強化（余剰1消費 → Lv" + (lv + 2) + "）") + '</button>' +
+      '<button class="b s" id="enh10"' + (sp < 1 || lv >= mx ? " disabled" : "") + '>まとめて強化（最大10レベル）</button><button class="b s" id="zx">閉じる</button></div>';
     zm.hidden = false;
   }
   zm.addEventListener("click", e => {
     const id = e.target.id;
-    if (id === "enh" && spare(zi) >= 1 && lvOf(zi) < MAXLV){ S.lv[zi] = lvOf(zi) + 1; save(); dirty = true; sfxLv(false); zoom(zi); }
-    else if (id === "enh10"){ const n = Math.min(10, spare(zi), MAXLV - lvOf(zi)); if (n > 0){ S.lv[zi] = lvOf(zi) + n; save(); dirty = true; sfxLv(n > 1); zoom(zi); } }
+    if (id === "enh" && spare(zi) >= 1 && lvOf(zi) < maxE(zi)){ S.lv[zi] = lvOf(zi) + 1; save(); dirty = true; sfxLv(false); zoom(zi); }
+    else if (id === "enh10"){ const n = Math.min(10, spare(zi), maxE(zi) - lvOf(zi)); if (n > 0){ S.lv[zi] = lvOf(zi) + n; save(); dirty = true; sfxLv(n > 1); zoom(zi); } }
     else if (id === "zx" || e.target === zm){ zm.hidden = true; if (dirty){ dirty = false; const t = hm.scrollTop; show("col"); hm.scrollTop = t; } }
   });
 
@@ -636,7 +673,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     try {
       const m = c.trim().split("."); if (m.length !== 3 || m[0] !== "OC1" || hs(m[1]) !== m[2]) return "コードが正しくありません";
       const d = JSON.parse(atob(m[1])), inv = {}, lv = {};
-      for (let i = 0; i < CH.length; i++){ const n = Math.max(0, Math.min(999, (d.inv && d.inv[i]) | 0)); if (n){ inv[i] = n; lv[i] = Math.max(0, Math.min(MAXLV, n - 1, (d.lv && d.lv[i]) | 0)); } }
+      for (let i = 0; i < CH.length; i++){ const n = Math.max(0, Math.min(999, (d.inv && d.inv[i]) | 0)); if (n){ inv[i] = n; lv[i] = Math.max(0, Math.min(maxE(i), n - 1, (d.lv && d.lv[i]) | 0)); } }
       S = {pt:Math.max(0, d.pt | 0), inv, lv, pity:Math.max(0, d.pity | 0), best:Math.max(0, d.best | 0)}; save(); return "OK";
     } catch(e){ return "コードが正しくありません"; }
   }
