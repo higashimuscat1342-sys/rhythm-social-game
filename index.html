@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>OVERCLOCKED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#04060e;--text:#d8f6ff;--cyan:#00f0ff;--mag:#ff2bd6}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+[hidden]{display:none!important}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;color:var(--text);background:var(--bg);
+  font-family:"Orbitron","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#sa{position:fixed;top:0;left:0;width:0;height:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden}
+.shake{animation:sh .25s}
+@keyframes sh{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(4,6,14,.78);padding:16px}
+#card{width:min(100%,460px);padding:28px 20px;text-align:center;background:rgba(8,14,30,.95);border:1px solid var(--cyan);
+  clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));
+  display:flex;flex-direction:column;gap:16px;align-items:center;box-shadow:0 0 30px rgba(0,240,255,.25) inset}
+#title{font-size:clamp(28px,9vw,44px);font-weight:900;letter-spacing:.06em;color:#fff;text-shadow:0 0 12px var(--cyan),3px 0 var(--mag)}
+#sub{font-size:14px;line-height:1.8;color:#9bc4d4;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif}
+.lv{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+.lv button{flex:1 1 calc(50% - 4px);font:inherit;font-weight:700;font-size:14px;padding:12px 0;border:1px solid #2a5566;background:transparent;color:#7fb4c6;letter-spacing:.08em}
+.lv button.on{border-color:var(--cyan);color:#001015;background:var(--cyan);box-shadow:0 0 14px var(--cyan)}
+#start{width:100%;font:inherit;font-weight:900;font-size:20px;letter-spacing:.2em;padding:16px;border:1px solid var(--mag);color:#fff;
+  background:linear-gradient(90deg,rgba(255,43,214,.25),rgba(0,240,255,.25));box-shadow:0 0 18px rgba(255,43,214,.5)}
+#start:active{background:var(--mag)}
+
+.scr{position:absolute;inset:0;z-index:3;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 18px) 16px calc(env(safe-area-inset-bottom,0px) + 24px);background:rgba(4,6,14,.9)}
+.w{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+#t2{font-size:clamp(28px,9vw,44px);font-weight:900;letter-spacing:.06em;color:#fff;text-shadow:0 0 12px var(--cyan),3px 0 var(--mag);margin-top:8px}
+.pt{font-size:30px;font-weight:900;color:#f5ff3b;text-shadow:0 0 12px #f5ff3b}
+.dim{font-size:12px;color:#7fb4c6;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif}
+.b{width:100%;font:inherit;font-weight:900;font-size:18px;letter-spacing:.14em;padding:16px;border:1px solid var(--cyan);color:#fff;background:linear-gradient(90deg,rgba(0,240,255,.2),rgba(255,43,214,.2))}
+.b:active{background:var(--mag)}.b:disabled{opacity:.35}
+.b.s{font-size:14px;padding:12px;border-color:#2a5566;color:#9bc4d4;background:transparent}
+.r2{display:flex;gap:8px;width:100%}.r2 .b{font-size:15px;padding:14px 4px;letter-spacing:.04em}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;width:100%}
+.c{border:1px solid;padding:10px 4px;font-size:11px;line-height:1.4;background:rgba(8,14,30,.95);animation:pop .4s both;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;position:relative}
+.c b{display:block;font-family:inherit;font-size:13px}.c .s{font-size:30px;margin:4px 0}.c.no{opacity:.22}
+.c i{position:absolute;top:2px;right:4px;font-style:normal;font-size:10px;color:#fff}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.b2{width:100%;font:inherit;font-size:13px;padding:10px;border:1px solid #2a5566;background:transparent;color:#7fb4c6;letter-spacing:.1em}
+.c .im{aspect-ratio:3/4;position:relative;background:#0a1428;overflow:hidden;margin-bottom:4px}
+.c .im span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;opacity:.35}
+.c .im img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.c i{z-index:2;text-shadow:0 0 4px #000}.c.SSR{box-shadow:0 0 14px #f5ff3b}.c.SR{box-shadow:0 0 10px #ff2bd6}
+.c.big{width:min(68vw,300px);font-size:16px;padding:10px;animation:pop .5s cubic-bezier(.2,1.6,.4,1) both;box-shadow:0 0 40px currentColor}
+.c.big b{font-size:22px}
+#fx{position:absolute;inset:0;z-index:10;background:#04060e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#fcard{position:relative;z-index:2}
+#fskip{position:absolute;z-index:3;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;width:auto;padding:8px 14px}
+.scr.bg{background:linear-gradient(to top,rgba(4,6,14,.85) 0,rgba(4,6,14,0) 45%),url(title.jpg) center/cover no-repeat,#04060e}
+.w.m{min-height:100%;justify-content:space-between}
+.tp,.bt{width:100%;display:flex;flex-direction:column;gap:10px;align-items:center}.bt{gap:12px}
+.scr.bg .b{background:rgba(4,6,14,.72)}.scr.bg .pt,.scr.bg .dim{text-shadow:0 0 6px #000,0 0 12px #000}.scr.bg .dim{color:#d8f6ff}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="sa"></div>
+<div id="overlay" hidden><div id="card">
+  <div id="title">OVERCLOCKED</div>
+  <div id="sub">シンプルな音ゲーです。<br>ノーツが下のラインに重なる瞬間に、そのレーンをタップ。<br>複数の指で同時に押せます。（PC: Z X C V B）<br>スコア × 難易度倍率 ＝ ガチャPT</div>
+  <div class="lv" id="lv">
+    <button data-l="easy">EASY</button><button data-l="normal" class="on">NORMAL</button><button data-l="hard">HARD</button><button data-l="veryhard">VERY HARD</button>
+  </div>
+  <button id="start">START</button>
+  <button class="b2" id="toHome">HOME</button>
+</div></div>
+
+<div class="scr" id="home"></div>
+<div id="fx" hidden><canvas id="fc"></canvas><div id="fcard"></div><button class="b2" id="fskip">SKIP</button></div>
+
+<script>
+(() => {
+  const LANES = [
+    {sym:"▲", color:"#00f0ff"},
+    {sym:"◆", color:"#ff2bd6"},
+    {sym:"●", color:"#f5ff3b"},
+    {sym:"■", color:"#39ff88"},
+    {sym:"✚", color:"#9d6bff"},
+  ];
+  // irr: 拍の間隔に掛ける倍率をランダムに選ぶ（不規則な譜面になる）／chord: 同時押しノーツの出現率
+  const MAX_HP = 10;   // 全難易度共通
+  const LEVELS = {
+    easy:   {name:"EASY", keys:3, bpm:160, fall:1500, goal:150,  irr:[1],                                  chord:0},
+    normal: {name:"NORMAL", keys:4, bpm:180, fall:1200, goal:300, irr:[1, 1, 0.5, 1.5, 0.75],              chord:0},
+    hard:   {name:"HARD", keys:5, bpm:220, fall:600,  goal:450, irr:[0.5, 0.5, 0.75, 1, 0.5, 1.5, 0.6, 2, 0.5], chord:0},
+    veryhard: {name:"VERY HARD", keys:5, bpm:220, fall:600,  goal:450, irr:[0.5, 0.5, 0.75, 1, 0.5, 1.5, 0.6, 2, 0.5], chord:0.15},
+  };
+  // index.html と同じフォルダに置く。ゲーム開始のたびにランダムで1曲選ばれる
+  const BGM_FILES = ["Music1.mp3", "Music2.mp3", "Music3.mp3", "Music4.mp3", "Music5.mp3", "Music6.mp3", "Music7.mp3", "Music8.mp3", "Music9.mp3"];
+  const PERFECT = 70, GOOD = 150, NEAR = 340;
+  const FONT = '"Orbitron","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif';
+  const KEYS_PC = "zxcvb";
+  const params = new URLSearchParams(location.search);
+  let level = LEVELS[params.get("level")] ? params.get("level") : "normal";
+
+  let KEYS, GOAL, BPM, FALL, INTERVAL, T0, USE, BASE_GOAL, IRR, CHORD;
+  function setLevel(l){
+    level = l; const P = LEVELS[l];
+    KEYS = P.keys; BASE_GOAL = GOAL = P.goal; BPM = P.bpm; FALL = P.fall; IRR = P.irr; CHORD = P.chord;
+    INTERVAL = 60000 / BPM; T0 = FALL + 600; USE = LANES.slice(0, KEYS);
+  }
+  setLevel(level);
+
+  // BGM（ゲーム開始と同時に再生。効果音・振動はなし）
+  const bgm = new Audio();
+  bgm.preload = "auto"; bgm.volume = 0.85; bgm.loop = true;
+  let lastBgm = -1;
+  function pickBgm(){
+    let i;
+    do { i = Math.floor(Math.random() * BGM_FILES.length); } while (i === lastBgm && BGM_FILES.length > 1);
+    lastBgm = i; return BGM_FILES[i];
+  }
+
+  const $ = id => document.getElementById(id);
+  const cv = $("cv"), ctx = cv.getContext("2d"), ov = $("overlay");
+  const title = $("title"), sub = $("sub"), startBtn = $("start"), lvBox = $("lv"), sa = $("sa");
+  const markLevel = () => [...lvBox.children].forEach(b => b.classList.toggle("on", b.dataset.l === level));
+  markLevel();
+  lvBox.addEventListener("click", e => { const l = e.target.dataset && e.target.dataset.l; if (l){ setLevel(l); notes = []; layout(); markLevel(); } });
+
+  let state = "idle";
+  let hp = 0, score = 0, combo = 0, maxCombo = 0, resolved = 0, spawned = 0, cnt = {p:0, g:0, m:0};
+  let notes = [], startT = 0, lastLane = -1, sameRun = 0, nextT = 0;
+  const flashes = [];
+  let judge = {text:"", color:"#fff", at:0};
+  let L = {};
+
+  function layout(){
+    const dpr = window.devicePixelRatio || 1;
+    const W = window.innerWidth, H = window.innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cs = getComputedStyle(sa);
+    const st = parseFloat(cs.paddingTop) || 0, sb = parseFloat(cs.paddingBottom) || 0;
+    const fieldW = Math.min(W, 520);
+    const topY = st + 70;
+    const padH = Math.max(110, Math.min(170, H * 0.2));
+    const bottom = H - sb - 8;
+    L = {W, H, fieldW, fx:(W - fieldW) / 2, laneW:fieldW / KEYS, topY, bottom, judgeY:bottom - padH, st};
+  }
+  window.addEventListener("resize", layout);
+  window.addEventListener("orientationchange", () => setTimeout(layout, 200));
+  layout();
+
+  const setJudge = (text, color) => { judge = {text, color, at:performance.now()}; };
+
+  function begin(){
+    layout();
+    hp = MAX_HP; score = 0; combo = 0; maxCombo = 0; resolved = 0; spawned = 0; notes = [];
+    cnt = {p:0, g:0, m:0}; lastLane = -1; sameRun = 0; GOAL = BASE_GOAL; nextT = T0;
+    judge = {text:"", color:"#fff", at:0};
+    try { bgm.pause(); bgm.src = pickBgm(); bgm.currentTime = 0; bgm.play().catch(() => {}); } catch(e){}   // タップ操作内で再生
+    ov.hidden = true;
+    startT = performance.now();
+    state = "play";
+  }
+
+  function finish(cleared){
+    state = "over";
+    try { bgm.pause(); } catch(e){}
+    title.textContent = cleared ? "CLEAR" : "GAME OVER";
+    sub.innerHTML = "HIT " + score + " / " + GOAL + "<br>PERFECT " + cnt.p + " ・ GOOD " + cnt.g + " ・ MISS " + cnt.m + "<br>MAX COMBO " + maxCombo;
+    const rw = Math.round((score + (cleared ? 50 : 0)) * MULT[level]);
+    S.pt += rw; S.best = Math.max(S.best, score); save();
+    sub.innerHTML += '<br><b style="color:#f5ff3b;font-size:20px">+' + rw + ' PT</b>（所持 ' + S.pt + '）';
+    startBtn.textContent = "RETRY";
+    lvBox.hidden = false;
+    ov.hidden = false;
+  }
+
+  function hurt(text, isNote){
+    hp--; combo = 0; cnt.m++;
+    if (isNote) resolved++;
+    setJudge(text, "#ff3b5c");
+    cv.classList.remove("shake"); void cv.offsetWidth; cv.classList.add("shake");
+    if (hp <= 0) finish(false);
+  }
+
+  function checkClear(){
+    if (state === "play" && resolved >= GOAL && hp > 0) finish(true);
+  }
+
+  function press(i){
+    if (i < 0 || i >= KEYS) return;
+    flashes[i] = performance.now();
+    if (state !== "play") return;
+    const g = performance.now() - startT;
+    let best = null, bd = 1e9;
+    for (const n of notes){
+      if (n.lane !== i) continue;
+      const d = Math.abs(n.t - g);
+      if (d < bd){ bd = d; best = n; }
+    }
+    if (best && bd <= GOOD){
+      notes.splice(notes.indexOf(best), 1);
+      score++; resolved++; combo++; maxCombo = Math.max(maxCombo, combo);
+      if (combo % 20 === 0 && hp < MAX_HP) hp++;   // 20コンボごとにHP回復
+      const perfect = bd <= PERFECT;
+      perfect ? cnt.p++ : cnt.g++;
+      setJudge(perfect ? "PERFECT" : "GOOD", perfect ? "#f5ff3b" : "#00f0ff");
+    } else if (best && bd <= NEAR){
+      notes.splice(notes.indexOf(best), 1);
+      hurt("MISS", true);
+    } else {
+      hurt("MISTAP", false);
+    }
+    checkClear();
+  }
+
+  function pickLane(){
+    let lane = Math.floor(Math.random() * KEYS);
+    if (lane === lastLane && sameRun >= 2) lane = (lane + 1 + Math.floor(Math.random() * (KEYS - 1))) % KEYS;
+    sameRun = lane === lastLane ? sameRun + 1 : 1; lastLane = lane;
+    return lane;
+  }
+
+  function update(g){
+    while (spawned < GOAL){
+      const t = nextT;
+      if (t - g > FALL) break;
+      const a = pickLane();
+      notes.push({lane:a, t}); spawned++;
+      // 同時押し（chord > 0 の難易度のみ。現在はVERY HARD）
+      if (CHORD && spawned < GOAL && Math.random() < CHORD){
+        let b = Math.floor(Math.random() * KEYS);
+        if (b === a) b = (b + 1 + Math.floor(Math.random() * (KEYS - 1))) % KEYS;
+        notes.push({lane:b, t}); spawned++;
+      }
+      nextT += INTERVAL * IRR[Math.floor(Math.random() * IRR.length)];
+    }
+    for (let i = 0; i < notes.length; i++){
+      if (g - notes[i].t > GOOD){
+        notes.splice(i, 1); i--;
+        hurt("MISS", true);
+        if (state !== "play") return;
+      }
+    }
+    checkClear();
+  }
+
+  function draw(g, pn){
+    const {W, H, fieldW, fx, laneW, topY, judgeY, bottom, st} = L;
+    ctx.clearRect(0, 0, W, H);
+    ctx.shadowBlur = 0;
+
+    // 背景：流れるグリッド
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, "#04060e"); bg.addColorStop(1, "#140828");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(0,240,255,.10)"; ctx.lineWidth = 1;
+    const off = (pn / 25) % 40;
+    for (let y = -40 + off; y < H; y += 40){ ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    for (let x = fx % 40; x < W; x += 40){ ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+
+    // フィールド
+    const fh = bottom - topY;
+    ctx.fillStyle = "rgba(4,8,20,.78)"; ctx.fillRect(fx, topY, fieldW, fh);
+    ctx.strokeStyle = "#00f0ff"; ctx.lineWidth = 2;
+    ctx.shadowColor = "#00f0ff"; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.moveTo(fx, topY); ctx.lineTo(fx, bottom); ctx.moveTo(fx + fieldW, topY); ctx.lineTo(fx + fieldW, bottom); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(0,240,255,.25)"; ctx.lineWidth = 1;
+    for (let i = 1; i < KEYS; i++){ ctx.beginPath(); ctx.moveTo(fx + i * laneW, topY); ctx.lineTo(fx + i * laneW, bottom); ctx.stroke(); }
+
+    // 押した列の光
+    for (let i = 0; i < KEYS; i++){
+      const a = 1 - (pn - (flashes[i] || -1e9)) / 240;
+      if (a > 0){
+        const gr = ctx.createLinearGradient(0, topY, 0, judgeY);
+        gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, USE[i].color);
+        ctx.globalAlpha = a * .5; ctx.fillStyle = gr; ctx.fillRect(fx + i * laneW, topY, laneW, judgeY - topY); ctx.globalAlpha = 1;
+      }
+    }
+
+    // 判定ライン
+    ctx.strokeStyle = "#ff2bd6"; ctx.lineWidth = 3; ctx.shadowColor = "#ff2bd6"; ctx.shadowBlur = 14;
+    ctx.beginPath(); ctx.moveTo(fx, judgeY); ctx.lineTo(fx + fieldW, judgeY); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // タップパッド
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const padTop = judgeY + 12, padH = bottom - padTop - 8;
+    for (let i = 0; i < KEYS; i++){
+      const down = pn - (flashes[i] || -1e9) < 120, x = fx + i * laneW + 5, w = laneW - 10;
+      ctx.fillStyle = down ? USE[i].color : "rgba(10,20,40,.9)"; ctx.fillRect(x, padTop, w, padH);
+      ctx.strokeStyle = USE[i].color; ctx.lineWidth = 2; ctx.strokeRect(x, padTop, w, padH);
+      ctx.fillStyle = down ? "#001015" : USE[i].color; ctx.font = "900 " + Math.min(38, laneW * .38) + "px " + FONT;
+      ctx.fillText(USE[i].sym, x + w / 2, padTop + padH / 2);
+    }
+
+    // ノーツ
+    const nh = Math.min(30, laneW * .34);
+    for (const n of notes){
+      const p = 1 - (n.t - g) / FALL;
+      const y = topY + (judgeY - topY) * p;
+      const lw = laneW * .84, x = fx + n.lane * laneW + laneW * .08, c = USE[n.lane].color;
+      ctx.shadowColor = c; ctx.shadowBlur = 16;
+      ctx.fillStyle = c; ctx.fillRect(x, y - nh / 2, lw, nh);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#fff"; ctx.fillRect(x, y - 2, lw, 4);
+    }
+
+    // HUD
+    const hy = st + 14, bw = Math.min(26, (fieldW * .55) / MAX_HP - 4);
+    for (let i = 0; i < MAX_HP; i++){
+      ctx.fillStyle = i < hp ? "#00f0ff" : "rgba(0,240,255,.15)";
+      if (i < hp){ ctx.shadowColor = "#00f0ff"; ctx.shadowBlur = 8; }
+      ctx.fillRect(fx + 10 + i * (bw + 4), hy, bw, 10); ctx.shadowBlur = 0;
+    }
+    ctx.textBaseline = "alphabetic"; ctx.textAlign = "right"; ctx.fillStyle = "#d8f6ff"; ctx.font = "700 16px " + FONT;
+    ctx.fillText(score + " / " + GOAL, fx + fieldW - 10, hy + 12);
+    ctx.textAlign = "left"; ctx.fillStyle = "#7fb4c6"; ctx.font = "700 12px " + FONT;
+    ctx.fillText(LEVELS[level].name, fx + 10, hy + 36);
+
+    // 判定表示
+    const a = 1 - (pn - judge.at) / 650;
+    if (a > 0 && judge.text){
+      const cy = (topY + judgeY) / 2;
+      ctx.globalAlpha = a; ctx.textAlign = "center"; ctx.fillStyle = judge.color; ctx.shadowColor = judge.color; ctx.shadowBlur = 14;
+      ctx.font = "900 34px " + FONT; ctx.fillText(judge.text, W / 2, cy);
+      if (combo >= 2){ ctx.font = "700 18px " + FONT; ctx.fillText(combo + " COMBO", W / 2, cy + 30); }
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    }
+  }
+
+  function frame(){
+    requestAnimationFrame(frame);
+    const pn = performance.now(), g = pn - startT;
+    if (state === "play") update(g);
+    draw(g, pn);
+  }
+
+  cv.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    const i = Math.floor((e.clientX - L.fx) / L.laneW);
+    if (e.clientX >= L.fx && i < KEYS) press(i);
+  });
+  window.addEventListener("keydown", e => {
+    if (e.repeat) return;
+    const i = KEYS_PC.indexOf(e.key.toLowerCase());
+    if (i >= 0) press(i);
+  });
+  document.addEventListener("contextmenu", e => e.preventDefault());
+  document.addEventListener("touchmove", e => { if (state === "play" || e.target === cv) e.preventDefault(); }, {passive:false});
+  startBtn.addEventListener("click", () => { lvBox.hidden = true; begin(); });
+
+  // ===== メイン／ガチャ =====
+  const SK = "overclocked_save_v1", COST = 100;
+  const MULT = {easy:1, normal:1.5, hard:2, veryhard:3};
+  const RC = {N:"#7f93a8", R:"#00f0ff", SR:"#ff2bd6", SSR:"#f5ff3b"};
+  // 32体: レアリティ配分。名前を付けたい場合は CN に {番号:"名前"} を追加（画像は character/001a.jpg〜032a.jpg）
+  const CN = {};
+  const CH = [];
+  [["N",12],["R",10],["SR",6],["SSR",4]].forEach(([r, n]) => { for (let k = 0; k < n; k++){ const i = CH.length; CH.push([CN[i + 1] || "No." + String(i + 1).padStart(3, "0"), r]); } });
+  let S = {pt:0, inv:{}, pity:0, best:0};
+  try { Object.assign(S, JSON.parse(localStorage.getItem(SK) || "{}")); } catch(e){}
+  const DEBUG_PT = 1000;   // テスト用：起動のたびにPTをこの値にする。不要になったら null に
+  if (DEBUG_PT) S.pt = DEBUG_PT;
+  function save(){ try { localStorage.setItem(SK, JSON.stringify(S)); } catch(e){} }
+  const hm = $("home"), SUB0 = sub.innerHTML;
+  const imgOf = i => "character/" + String(i + 1).padStart(3, "0") + "a.jpg";
+  const card = (i, ex, d, n) => { const [nm, r] = CH[i];
+    return '<div class="c ' + r + ' ' + (ex || "") + '" style="border-color:' + RC[r] + ';color:' + RC[r] + ';animation-delay:' + (d || 0) + 'ms"><div class="im"><span>' + (i + 1) + '</span><img src="' + imgOf(i) + '" onerror="this.remove()"></div><b>' + r + '</b>' + nm + (n ? '<i>' + n + '</i>' : '') + '</div>';
+  };
+  function roll(guar){
+    const r = Math.random() * 100;
+    let q = r < 3 ? "SSR" : r < 15 ? "SR" : r < 45 ? "R" : "N";
+    if (guar && (q === "N" || q === "R")) q = "SR";
+    if (S.pity >= 49) q = "SSR";
+    S.pity = q === "SSR" ? 0 : S.pity + 1;
+    const pool = CH.map((c, i) => i).filter(i => CH[i][1] === q);
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  let busy = false;
+  async function pull(n){
+    if (busy || S.pt < COST * n) return;
+    busy = true; S.pt -= COST * n; const res = [];
+    for (let k = 0; k < n; k++){ const i = roll(n === 10 && k === 9); res.push([i, !S.inv[i]]); S.inv[i] = (S.inv[i] || 0) + 1; }
+    save();
+    try { await gfx(res); } catch(e){}
+    busy = false; show("gacha", res);
+  }
+
+  // ===== ガチャ演出（素材不要：Canvas＋WebAudio合成） =====
+  const SFX = true;   // 効果音を消すなら false
+  const fx = $("fx"), fc = $("fc"), x = fc.getContext("2d"), fcard = $("fcard"), fskip = $("fskip");
+  let FX = {mode:"", t0:0, rar:"N"}, P = [], AC;
+  const ORD = ["N", "R", "SR", "SSR"];
+  const fxCol = r => r === "SSR" ? "hsl(" + (performance.now() / 4 % 360) + ",100%,62%)" : RC[r];
+  function tone(f1, f2, d, ty, v, dl){
+    if (!SFX) return;
+    try { AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + (dl || 0);
+      o.type = ty; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + d);
+      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+      o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d); } catch(e){}
+  }
+  const sfxRev = r => ({N:[660], R:[660,880], SR:[660,880,1100], SSR:[523,659,784,1047,1319]})[r].forEach((f, k) => tone(f, f, .3, "triangle", .12, k * .09));
+  function burst(r){
+    const n = {N:25, R:60, SR:130, SSR:300}[r], cx = fc.width / 2, cy = fc.height / 2;
+    for (let k = 0; k < n; k++){ const a = Math.random() * 6.283, sp = 2 + Math.random() * (r === "SSR" ? 12 : 7);
+      P.push({x:cx, y:cy, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, g:.12, life:1, c:fxCol(r), z:2 + Math.random() * 3}); }
+  }
+  function fxLoop(now){
+    if (fx.hidden) return;
+    requestAnimationFrame(fxLoop);
+    const W = fc.width, H = fc.height, cx = W / 2, cy = H / 2, t = (now - FX.t0) / 1000, c = fxCol(FX.rar);
+    const rays = (a, rot) => { x.save(); x.translate(cx, cy); x.rotate(rot); x.fillStyle = c; x.globalAlpha = a; const R = Math.max(W, H);
+      for (let i = 0; i < 12; i++){ x.rotate(Math.PI / 6); x.beginPath(); x.moveTo(0, 0); x.lineTo(R, -R * .07); x.lineTo(R, R * .07); x.fill(); } x.restore(); x.globalAlpha = 1; };
+    x.globalCompositeOperation = "source-over"; x.fillStyle = "rgba(4,6,14,.3)"; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = "lighter";
+    if (FX.mode === "charge"){
+      const k = Math.min(t / 1.5, 1);
+      x.lineWidth = 3; x.strokeStyle = c;
+      for (let i = 0; i < 3; i++){ const a = t * (i + 1.5) * (i % 2 ? -1 : 1); x.beginPath(); x.arc(cx, cy, (70 + i * 50) * (1.4 - k * .5), a, a + 4); x.stroke(); }
+      const gr = x.createRadialGradient(cx, cy, 0, cx, cy, 30 + k * 90); gr.addColorStop(0, "#fff"); gr.addColorStop(1, "rgba(0,0,0,0)");
+      x.fillStyle = gr; x.fillRect(0, 0, W, H);
+      for (let j = 0; j < 3; j++){ const a = Math.random() * 6.283, R = Math.max(W, H) * .5; P.push({x:cx + Math.cos(a) * R, y:cy + Math.sin(a) * R, in:1, life:1, c, z:2}); }
+      fx.style.transform = "translate(" + ((Math.random() - .5) * k * 10) + "px," + ((Math.random() - .5) * k * 10) + "px)";
+      if (k >= 1){ FX.mode = "flash"; FX.t0 = now; fx.style.transform = ""; tone(180, 30, .6, "square", .15); }
+    } else if (FX.mode === "flash"){
+      rays(1, t * 2); x.globalAlpha = Math.max(0, 1 - t * 2.5); x.fillStyle = "#fff"; x.fillRect(0, 0, W, H); x.globalAlpha = 1;
+      if (t > .45){ FX.mode = "wait"; FX.next && FX.next(); }
+    } else if (FX.mode === "reveal" && FX.rar !== "N") rays(FX.rar === "SSR" ? .35 : .18, t * .4);
+    for (let i = P.length - 1; i >= 0; i--){
+      const p = P[i];
+      if (p.in){ p.x += (cx - p.x) * .07; p.y += (cy - p.y) * .07; p.life -= .012; if (Math.hypot(cx - p.x, cy - p.y) < 20) p.life = 0; }
+      else { p.x += p.vx; p.y += p.vy; p.vy += p.g; p.life -= .014; }
+      if (p.life <= 0){ P.splice(i, 1); continue; }
+      x.globalAlpha = p.life; x.fillStyle = p.c; x.fillRect(p.x, p.y, p.z, p.z);
+    }
+    x.globalAlpha = 1; x.globalCompositeOperation = "source-over";
+  }
+  fx.addEventListener("click", e => {
+    if (e.target === fskip) FX.skip = true;
+    if (FX.mode === "reveal" && FX.tap){ const f = FX.tap; FX.tap = null; f(); }
+  });
+  async function gfx(res){
+    const top = res.map(r => CH[r[0]][1]).reduce((a, b) => ORD.indexOf(b) > ORD.indexOf(a) ? b : a, "N");
+    fc.width = innerWidth; fc.height = innerHeight; P.length = 0; fcard.innerHTML = ""; fskip.hidden = res.length < 2;
+    fx.hidden = false;
+    await new Promise(r => { FX = {mode:"charge", t0:performance.now(), rar:top, next:r}; tone(100, 1400, 1.5, "sawtooth", .05); requestAnimationFrame(fxLoop); });
+    for (const [i, nw] of res){
+      if (FX.skip) break;
+      const r = CH[i][1];
+      FX.mode = "reveal"; FX.rar = r; FX.t0 = performance.now();
+      fcard.innerHTML = card(i, "big", 0, nw ? "NEW" : ""); burst(r); sfxRev(r);
+      await new Promise(rs => { FX.tap = rs; });
+    }
+    fx.hidden = true; fx.style.transform = ""; FX.mode = "";
+  }
+  function show(v, res){
+    hm.hidden = false; hm.scrollTop = 0; hm.className = "scr" + (v === "menu" ? " bg" : "");
+    const own = Object.keys(S.inv).length, pt = '<div class="pt">' + S.pt + ' PT</div>';
+    let h = "";
+    if (v === "menu") h = '<div class="tp">' + pt + '<div class="dim">BEST HIT ' + S.best + ' ・ COLLECTION ' + own + '/' + CH.length + '</div></div>' +
+      '<div class="bt"><button class="b" id="bp">♪ PLAY</button><button class="b" id="bg">GACHA（' + Math.floor(S.pt / COST) + '回分）</button><button class="b" id="bc">COLLECTION</button></div>';
+    else if (v === "gacha") h = '<div id="t2" style="font-size:28px">GACHA</div>' + pt +
+      '<div class="dim">1回 ' + COST + 'PT ・ 10連は最後にSR以上確定 ・ 50回でSSR天井（あと' + (49 - S.pity) + '回）<br>SSR 3% / SR 12% / R 30% / N 55%</div>' +
+      '<div class="r2"><button class="b" id="p1"' + (S.pt < COST ? " disabled" : "") + '>1回</button><button class="b" id="p10"' + (S.pt < COST * 10 ? " disabled" : "") + '>10連</button></div>' +
+      '<div class="g">' + (res ? res.map((x, k) => card(x[0], "", k * 120, x[1] ? "NEW" : "")).join("") : "") + '</div><button class="b s" id="bk">← HOME</button>';
+    else h = '<div id="t2" style="font-size:28px">COLLECTION</div><div class="dim">' + own + ' / ' + CH.length + '</div><div class="g">' +
+      CH.map((c, i) => S.inv[i] ? card(i, "", 0, "×" + S.inv[i]) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><b>?</b><div class="s">？</div>???</div>').join("") +
+      '</div><button class="b s" id="bk">← HOME</button>';
+    hm.innerHTML = '<div class="w' + (v === "menu" ? " m" : "") + '">' + h + '</div>';
+  }
+  function openPlay(){
+    hm.hidden = true; state = "idle";
+    title.textContent = "OVERCLOCKED"; sub.innerHTML = SUB0; startBtn.textContent = "START"; lvBox.hidden = false; ov.hidden = false;
+  }
+  hm.addEventListener("click", e => { const id = e.target.id;
+    if (id === "bp") openPlay(); else if (id === "bg") show("gacha"); else if (id === "bc") show("col");
+    else if (id === "bk") show("menu"); else if (id === "p1") pull(1); else if (id === "p10") pull(10); });
+  $("toHome").addEventListener("click", () => { ov.hidden = true; show("menu"); });
+  show("menu");
+  frame();
+})();
+</script>
+</body>
+</html>
