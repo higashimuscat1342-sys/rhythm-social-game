@@ -73,6 +73,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .warn{font-size:12px;line-height:1.7;color:#ffb3c0;border:1px solid #ff3b5c;padding:10px;text-align:left;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif}
 .msg{color:#f5ff3b;font-size:13px;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif}
 .c.UL{box-shadow:0 0 18px #fff,0 0 34px #ff2bd6}
+.ulb{text-align:center;font-weight:900;font-size:20px;letter-spacing:.12em;margin-bottom:10px;background:linear-gradient(90deg,#ff2bd6,#f5ff3b,#39ff88,#00f0ff,#ff2bd6);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rb 1.5s linear infinite}
+@keyframes rb{to{background-position:200% 0}}
 </style>
 </head>
 <body>
@@ -390,7 +392,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   };
   function roll(guar){
     const r = Math.random() * 100;
-    let q = r < .5 ? "UL" : r < 3 ? "SSR" : r < 15 ? "SR" : r < 45 ? "R" : "N";
+    let q = r < .1 ? "UL" : r < 3 ? "SSR" : r < 15 ? "SR" : r < 45 ? "R" : "N";
     if (guar && (q === "N" || q === "R")) q = "SR";
     if (S.pity >= 49 && q !== "UL") q = "SSR";
     S.pity = q === "SSR" || q === "UL" ? 0 : S.pity + 1;
@@ -472,8 +474,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       [72, 76, 79, 84, 88, 91, 96, 100, 103, 108].forEach((m, k) => note(m, k * .07, 1.4, "triangle", .15, 7000));
       [84, 88, 91, 96, 103].forEach(m => note(m, .8, 2.6, "sine", .13, 9000, .9)); }
   } catch(e){} };
-  function burst(r){
-    const n = {N:25, R:60, SR:130, SSR:300, UL:650}[r], cx = fc.width / 2, cy = fc.height / 2;
+  function burst(r, px, py, nn){
+    const n = nn || {N:25, R:60, SR:130, SSR:300, UL:650}[r], cx = px == null ? fc.width / 2 : px, cy = py == null ? fc.height / 2 : py;
     for (let k = 0; k < n; k++){ const a = Math.random() * 6.283, sp = 2 + Math.random() * (r === "UL" ? 16 : r === "SSR" ? 12 : 7);
       P.push({x:cx, y:cy, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, g:.12, life:1, c:fxCol(r), z:2 + Math.random() * 3}); }
   }
@@ -494,10 +496,37 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       for (let j = 0; j < 3; j++){ const a = Math.random() * 6.283, R = Math.max(W, H) * .5; P.push({x:cx + Math.cos(a) * R, y:cy + Math.sin(a) * R, in:1, life:1, c, z:2}); }
       fx.style.transform = "translate(" + ((Math.random() - .5) * k * 10) + "px," + ((Math.random() - .5) * k * 10) + "px)";
       if (k >= 1){ FX.mode = "flash"; FX.t0 = now; fx.style.transform = ""; sfxHit(); }
+    } else if (FX.mode === "ul"){
+      const k = Math.min(t / 4, 1); FX.pu = FX.pu || {};
+      if (t < 4){
+        x.lineWidth = 3; x.strokeStyle = c;
+        for (let i = 0; i < 6; i++){ const a = t * (i + 1) * (i % 2 ? -.8 : .8); x.beginPath(); x.arc(cx, cy, (60 + i * 38) * (1.5 - k * .6), a, a + 3.2); x.stroke(); }
+        const gr = x.createRadialGradient(cx, cy, 0, cx, cy, 30 + k * 220); gr.addColorStop(0, "#fff"); gr.addColorStop(.4, c); gr.addColorStop(1, "rgba(0,0,0,0)");
+        x.fillStyle = gr; x.fillRect(0, 0, W, H);
+        for (let j = 0; j < 8; j++){ const a = Math.random() * 6.283, R = Math.max(W, H) * .6; P.push({x:cx + Math.cos(a) * R, y:cy + Math.sin(a) * R, in:1, life:1, c:fxCol("UL"), z:2 + Math.random() * 2}); }
+        fx.style.transform = "translate(" + ((Math.random() - .5) * k * 22) + "px," + ((Math.random() - .5) * k * 22) + "px)";
+        [1.2, 2.2, 3, 3.5].forEach((tt, n) => { if (t >= tt && !FX.pu[n]){ FX.pu[n] = 1; FX.fl = now; if (SFX) try { boom(0, .6 + n * .2); } catch(e){} } });
+        if (FX.fl){ x.globalAlpha = Math.max(0, 1 - (now - FX.fl) / 350) * .6; x.fillStyle = "#fff"; x.fillRect(0, 0, W, H); x.globalAlpha = 1; }
+      } else {
+        const u = t - 4; fx.style.transform = "";
+        if (!FX.pu.go){ FX.pu.go = 1; sfxRev("UL"); if (SFX) try { boom(0, 1.4); } catch(e){} burst("UL"); burst("UL"); }
+        rays(Math.max(.2, 1 - u * .3), t);
+        x.lineWidth = 6; x.strokeStyle = "#fff";
+        for (let i = 0; i < 3; i++){ const R = (u - i * .15) * 1100; if (R > 0){ x.globalAlpha = Math.max(0, 1 - R / 1500); x.beginPath(); x.arc(cx, cy, R, 0, 6.283); x.stroke(); } }
+        x.globalAlpha = Math.max(0, 1 - u * 1.4); x.fillStyle = "#fff"; x.fillRect(0, 0, W, H);
+        x.globalCompositeOperation = "source-over"; x.globalAlpha = Math.min(1, u * 3) * Math.max(0, Math.min(1, (1.9 - u) * 3));
+        x.textAlign = "center"; x.textBaseline = "middle"; x.font = "900 " + Math.min(W * .075, 64) * (1 + (1 - Math.min(1, u * 2)) * .8) + "px " + FONT;
+        x.shadowColor = c; x.shadowBlur = 30; x.fillStyle = "#fff"; x.fillText("ULTRA LEGEND", cx, cy); x.shadowBlur = 0;
+        x.globalAlpha = 1; x.globalCompositeOperation = "lighter";
+        if (u > 2){ FX.mode = "wait"; FX.next && FX.next(); }
+      }
     } else if (FX.mode === "flash"){
       rays(1, t * 2); x.globalAlpha = Math.max(0, 1 - t * 2.5); x.fillStyle = "#fff"; x.fillRect(0, 0, W, H); x.globalAlpha = 1;
       if (t > .45){ FX.mode = "wait"; FX.next && FX.next(); }
-    } else if (FX.mode === "reveal" && FX.rar !== "N") rays(FX.rar === "UL" ? .55 : FX.rar === "SSR" ? .35 : .18, t * .4);
+    } else if (FX.mode === "reveal" && FX.rar !== "N"){
+      rays(FX.rar === "UL" ? .55 : FX.rar === "SSR" ? .35 : .18, t * .4);
+      if (FX.rar === "UL" && Math.random() < .05) burst("UL", Math.random() * W, Math.random() * H * .7, 60);
+    }
     for (let i = P.length - 1; i >= 0; i--){
       const p = P[i];
       if (p.in){ p.x += (cx - p.x) * .07; p.y += (cy - p.y) * .07; p.life -= .012; if (Math.hypot(cx - p.x, cy - p.y) < 20) p.life = 0; }
@@ -515,12 +544,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     const top = res.map(r => CH[r[0]][1]).reduce((a, b) => ORD.indexOf(b) > ORD.indexOf(a) ? b : a, "N");
     fc.width = innerWidth; fc.height = innerHeight; P.length = 0; fcard.innerHTML = ""; fskip.hidden = res.length < 2;
     fx.hidden = false;
-    await new Promise(r => { FX = {mode:"charge", t0:performance.now(), rar:top, next:r}; sfxCharge(); requestAnimationFrame(fxLoop); });
+    const ul = top === "UL";
+    await new Promise(r => { FX = {mode:ul ? "ul" : "charge", t0:performance.now(), rar:top, next:r};
+      if (ul){ if (SFX) try { noise(0, 4, 200, 9000, .55, true); sweep(4, 40, 500, .16); } catch(e){} } else sfxCharge();
+      requestAnimationFrame(fxLoop); });
     for (const [i, nw] of res){
       if (FX.skip) break;
       const r = CH[i][1];
       FX.mode = "reveal"; FX.rar = r; FX.t0 = performance.now();
-      fcard.innerHTML = card(i, "big", 0, nw ? "NEW" : ""); burst(r); sfxRev(r);
+      fcard.innerHTML = (r === "UL" ? '<div class="ulb">★ ULTRA LEGEND ★</div>' : "") + card(i, "big", 0, nw ? "NEW" : ""); burst(r); sfxRev(r);
       await new Promise(rs => { FX.tap = rs; });
     }
     fx.hidden = true; fx.style.transform = ""; FX.mode = "";
@@ -539,7 +571,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       (rsConfirm ? '<div class="warn" style="font-weight:700">⚠ 本当にリセットしますか？<br>PT・所持キャラ・強化・ベストスコアがすべて消えます。元に戻すことはできません。<br>必要なら先に引き継ぎコードを控えてください。</div><button class="b s" id="rsc">キャンセル（戻る）</button><button class="b s" id="rsy" style="border-color:#ff3b5c;color:#ff3b5c">はい、すべて消去する</button>'
         : '<button class="b s" id="rs" style="border-color:#ff3b5c;color:#ff3b5c">データをリセット</button>') + '<button class="b s" id="bk">← HOME</button>';
     else if (v === "gacha") h = '<div id="t2" style="font-size:28px">GACHA</div>' + pt +
-      '<div class="dim">1回 ' + COST + 'PT ・ 10連は最後にSR以上確定 ・ 50回でSSR天井（あと' + (49 - S.pity) + '回）<br>UL 0.5% / SSR 2.5% / SR 12% / R 30% / N 55%</div>' +
+      '<div class="dim">1回 ' + COST + 'PT ・ 10連は最後にSR以上確定 ・ 50回でSSR天井（あと' + (49 - S.pity) + '回）<br>UL 0.1% / SSR 2.9% / SR 12% / R 30% / N 55%</div>' +
       '<div class="r2"><button class="b" id="p1"' + (S.pt < COST ? " disabled" : "") + '>1回</button><button class="b" id="p10"' + (S.pt < COST * 10 ? " disabled" : "") + '>10連</button></div>' +
       '<div class="g">' + (res ? res.map((x, k) => card(x[0], "", k * 120, x[1] ? "NEW" : "")).join("") : "") + '</div><button class="b s" id="bk">← HOME</button>';
     else h = '<div id="t2" style="font-size:28px">COLLECTION</div><div class="dim">' + own + ' / ' + CH.length + '</div><div class="g">' +
@@ -563,27 +595,28 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     else if (id === "rsy"){ rsConfirm = false; S = {pt:0, inv:{}, lv:{}, pity:0, best:0}; save(); show("menu"); } else if (id === "p1") pull(1); else if (id === "p10") pull(10); });
   $("toHome").addEventListener("click", () => { ov.hidden = true; show("menu"); });
   // ===== 強化・ステータス =====
-  const MAXLV = 10;
+  const MAXLV = 100;
   const STATS = [["体力","hp"], ["攻撃力","atk"], ["防御力","def"], ["精神力","mnd"]];
   const BASE = {N:{hp:100, atk:10, def:10, mnd:10}, R:{hp:160, atk:18, def:18, mnd:18}, SR:{hp:320, atk:40, def:40, mnd:40}, SSR:{hp:600, atk:75, def:75, mnd:75}, UL:{hp:1200, atk:150, def:150, mnd:150}};  // レアリティ別の初期値
   const lvOf = i => S.lv[i] || 0, spare = i => (S.inv[i] || 0) - 1 - lvOf(i);   // 余剰コピー＝所持数−1−強化済み回数
-  function stat(i, k){   // 初期値×キャラ個体差(0.8〜1.2)×(1＋0.1×Lv)
+  function stat(i, k){   // 初期値×キャラ個体差(0.8〜1.2)×(1＋0.03×Lv)
     const ki = STATS.findIndex(a => a[1] === k), v = .8 + .4 * ((Math.abs(Math.sin((i + 1) * 12.9898 + ki * 78.233) * 43758.5453)) % 1);
-    return Math.round(BASE[CH[i][1]][k] * v * (1 + .1 * lvOf(i)));
+    return Math.round(BASE[CH[i][1]][k] * v * (1 + .03 * lvOf(i)));
   }
   const zm = $("zoom"); let zi = 0, dirty = false;
   function zoom(i){
     zi = i; const r = CH[i][1], lv = lvOf(i), sp = spare(i);
     zm.innerHTML = '<div class="zw">' + card(i, "big zm", 0, "") +
       '<div class="dim" style="color:#d8f6ff;font-size:14px">Lv ' + lv + ' / ' + MAXLV + ' ・ 余剰コピー ' + Math.max(0, sp) + '</div>' +
-      STATS.map(([nm, k]) => '<div class="st"><span>' + nm + '</span><div class="bar"><i style="width:' + Math.min(100, stat(i, k) / (BASE.UL[k] * 2.4) * 100) + '%;background:' + RC[r] + '"></i></div><b>' + stat(i, k) + '</b></div>').join("") +
+      STATS.map(([nm, k]) => '<div class="st"><span>' + nm + '</span><div class="bar"><i style="width:' + Math.min(100, stat(i, k) / (BASE.UL[k] * 4.8) * 100) + '%;background:' + RC[r] + '"></i></div><b>' + stat(i, k) + '</b></div>').join("") +
       '<button class="b" id="enh"' + (sp < 1 || lv >= MAXLV ? " disabled" : "") + '>' + (lv >= MAXLV ? "MAX" : "強化（コピー1消費 → Lv" + (lv + 1) + "）") + '</button>' +
-      '<button class="b s" id="zx">閉じる</button></div>';
+      '<button class="b s" id="enh10"' + (sp < 1 || lv >= MAXLV ? " disabled" : "") + '>まとめて強化（最大10レベル）</button><button class="b s" id="zx">閉じる</button></div>';
     zm.hidden = false;
   }
   zm.addEventListener("click", e => {
     const id = e.target.id;
     if (id === "enh" && spare(zi) >= 1 && lvOf(zi) < MAXLV){ S.lv[zi] = lvOf(zi) + 1; save(); dirty = true; zoom(zi); }
+    else if (id === "enh10"){ const n = Math.min(10, spare(zi), MAXLV - lvOf(zi)); if (n > 0){ S.lv[zi] = lvOf(zi) + n; save(); dirty = true; zoom(zi); } }
     else if (id === "zx" || e.target === zm){ zm.hidden = true; if (dirty){ dirty = false; const t = hm.scrollTop; show("col"); hm.scrollTop = t; } }
   });
 
