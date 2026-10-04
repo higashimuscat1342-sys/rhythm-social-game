@@ -58,6 +58,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .w.m{min-height:100%;justify-content:space-between}
 .tp,.bt{width:100%;display:flex;flex-direction:column;gap:10px;align-items:center}.bt{gap:12px}
 .scr.bg .b{background:rgba(4,6,14,.72)}.scr.bg .pt,.scr.bg .dim{text-shadow:0 0 6px #000,0 0 12px #000}.scr.bg .dim{color:#d8f6ff}
+#t2.logo{font-size:clamp(30px,8vw,64px);white-space:nowrap;margin:0 0 6px;text-shadow:0 0 18px var(--cyan),0 0 40px var(--cyan),4px 0 var(--mag)}
+.w.m{max-width:720px}.bt{max-width:460px}
 </style>
 </head>
 <body>
@@ -461,14 +463,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     hm.hidden = false; hm.scrollTop = 0; hm.className = "scr" + (v === "menu" ? " bg" : "");
     const own = Object.keys(S.inv).length, pt = '<div class="pt">' + S.pt + ' PT</div>';
     let h = "";
-    if (v === "menu") h = '<div class="tp">' + pt + '<div class="dim">BEST HIT ' + S.best + ' ・ COLLECTION ' + own + '/' + CH.length + '</div></div>' +
+    if (v === "menu") h = '<div class="tp"><div id="t2" class="logo">OVERCLOCKED</div>' + pt + '<div class="dim">BEST HIT ' + S.best + ' ・ COLLECTION ' + own + '/' + CH.length + '</div></div>' +
       '<div class="bt"><button class="b" id="bp">♪ PLAY</button><button class="b" id="bg">GACHA（' + Math.floor(S.pt / COST) + '回分）</button><button class="b" id="bc">COLLECTION</button></div>';
     else if (v === "gacha") h = '<div id="t2" style="font-size:28px">GACHA</div>' + pt +
       '<div class="dim">1回 ' + COST + 'PT ・ 10連は最後にSR以上確定 ・ 50回でSSR天井（あと' + (49 - S.pity) + '回）<br>SSR 3% / SR 12% / R 30% / N 55%</div>' +
       '<div class="r2"><button class="b" id="p1"' + (S.pt < COST ? " disabled" : "") + '>1回</button><button class="b" id="p10"' + (S.pt < COST * 10 ? " disabled" : "") + '>10連</button></div>' +
       '<div class="g">' + (res ? res.map((x, k) => card(x[0], "", k * 120, x[1] ? "NEW" : "")).join("") : "") + '</div><button class="b s" id="bk">← HOME</button>';
     else h = '<div id="t2" style="font-size:28px">COLLECTION</div><div class="dim">' + own + ' / ' + CH.length + '</div><div class="g">' +
-      CH.map((c, i) => S.inv[i] ? card(i, "", 0, "×" + S.inv[i]) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><b>?</b><div class="s">？</div>???</div>').join("") +
+      CH.map((c, i) => S.inv[i] ? card(i, "", 0, "×" + S.inv[i]) : '<div class="c no" style="border-color:#2a5566;color:#2a5566"><div class="im"><span style="opacity:1">？</span></div><b>?</b>???</div>').join("") +
       '</div><button class="b s" id="bk">← HOME</button>';
     hm.innerHTML = '<div class="w' + (v === "menu" ? " m" : "") + '">' + h + '</div>';
   }
